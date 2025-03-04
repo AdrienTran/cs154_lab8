@@ -18,6 +18,9 @@ page_fault          = pyrtl.WireVector(bitwidth=1, name="page_fault")
 state               = pyrtl.Register(bitwidth=2, name="state")
 base_register       = pyrtl.Const(0x3FFBFF, bitwidth=22)
 
+writable = pyrtl.WireVector(bitwidth=1, name="writable")
+readable = pyrtl.WireVector(bitwidth=1, name="readable")
+
 # Step 1 : Split input into the three offsets
 offset1 = pyrtl.WireVector(bitwidth=10, name="offset1")
 offset2 = pyrtl.WireVector(bitwidth=10, name="offset2")
@@ -34,7 +37,7 @@ with pyrtl.conditional_assignment:
             with new_req_i == 1:
                 state.next |= 1
         with state == 1:
-            with page_fault == 1:
+            with (page_fault | (~writable & req_type_i) | (~readable & ~req_type_i)) == 1:
                 state.next |= 0
             with page_fault == 0:
                 state.next |= 2
@@ -44,9 +47,7 @@ with pyrtl.conditional_assignment:
         state.next |= 0
 
 # Step 3 : Determine physical address by walking the page table structure
-next_addr = pyrtl.Register(bitwidth=32, name="temp_addr")
-writable = pyrtl.WireVector(bitwidth=1, name="writable")
-readable = pyrtl.WireVector(bitwidth=1, name="readable")
+next_addr = pyrtl.Register(bitwidth=32, name="next_addr")
 
 with pyrtl.conditional_assignment:
     with state == 0:
@@ -54,31 +55,31 @@ with pyrtl.conditional_assignment:
         # print(temp_addr.bitwidth)
         
     with state == 1:
-        temp_addr = main_memory[next_addr]
+        first_entry = main_memory[next_addr]
         
-        valid = temp_addr[31]
-        valid_o |= temp_addr[31]
-        dirty_o |= temp_addr[30]
-        ref_o |= temp_addr[29]
+        valid = first_entry[31]
+        valid_o |= first_entry[31]
+        dirty_o |= first_entry[30]
+        ref_o |= first_entry[29]
         
         with valid == 0:
             page_fault |= 1
-        next_addr.next |= pyrtl.corecircuits.concat(temp_addr[0:22], offset2)
+        next_addr.next |= pyrtl.corecircuits.concat(first_entry[0:22], offset2)
         # print(temp_addr.bitwidth)
         
     with state == 2:
-        temp_addr = main_memory[next_addr]
+        second_entry = main_memory[next_addr]
         
-        valid_o |= temp_addr[31]
-        dirty_o |= temp_addr[30]
-        ref_o |= temp_addr[29]
-        writable |= temp_addr[28]
-        readable |= temp_addr[27]
+        valid_o |= second_entry[31]
+        dirty_o |= second_entry[30]
+        ref_o |= second_entry[29]
+        writable |= second_entry[28]
+        readable |= second_entry[27]
         
-        valid = temp_addr[31]
+        valid = second_entry[31]
         with valid == 0:
             page_fault |= 1
-        temp_addr2 = pyrtl.corecircuits.concat(temp_addr[0:20], offset3)
+        temp_addr2 = pyrtl.corecircuits.concat(second_entry[0:20], offset3)
         # print(temp_addr.bitwidth)
         # temp_addr = temp_addr | offset3
         physical_addr_o |= temp_addr2
