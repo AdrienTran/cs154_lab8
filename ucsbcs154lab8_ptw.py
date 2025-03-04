@@ -61,10 +61,18 @@ with pyrtl.conditional_assignment:
         valid_o |= first_entry[31]
         dirty_o |= first_entry[30]
         ref_o |= first_entry[29]
+        writable |= first_entry[28]
+        readable |= first_entry[27]
         
         with valid == 0:
             page_fault |= 1
             error_code_o |= 1
+        with req_type_i == 0:
+            with readable == 0:
+                error_code_o |= 2
+        with req_type_i == 1:
+            with writable == 0:
+                error_code_o |= 4
         
         next_addr.next |= pyrtl.corecircuits.concat(first_entry[0:22], offset2)
         # print(temp_addr.bitwidth)
