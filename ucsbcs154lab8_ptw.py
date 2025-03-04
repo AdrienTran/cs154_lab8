@@ -37,7 +37,7 @@ with pyrtl.conditional_assignment:
             with new_req_i == 1:
                 state.next |= 1
         with state == 1:
-            with (page_fault | (~writable & req_type_i) | (~readable & ~req_type_i)) == 1:
+            with (page_fault) == 1: # | (~writable & req_type_i) | (~readable & ~req_type_i)
                 state.next |= 0
             with page_fault == 0:
                 state.next |= 2
