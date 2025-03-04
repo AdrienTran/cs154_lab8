@@ -45,6 +45,9 @@ with pyrtl.conditional_assignment:
 
 # Step 3 : Determine physical address by walking the page table structure
 next_addr = pyrtl.Register(bitwidth=32, name="temp_addr")
+writable = pyrtl.WireVector(bitwidth=1, name="writable")
+readable = pyrtl.WireVector(bitwidth=1, name="readable")
+
 with pyrtl.conditional_assignment:
     with state == 0:
         next_addr.next |= pyrtl.corecircuits.concat(base_register, offset1)
@@ -69,11 +72,8 @@ with pyrtl.conditional_assignment:
         valid_o |= temp_addr[31]
         dirty_o |= temp_addr[30]
         ref_o |= temp_addr[29]
-        writable = temp_addr[28]
-        readable = temp_addr[27]
-        
-        # writable_o |= temp_addr[28]
-        # readable_o |= temp_addr[27]
+        writable |= temp_addr[28]
+        readable |= temp_addr[27]
         
         valid = temp_addr[31]
         with valid == 0:
@@ -105,6 +105,8 @@ with pyrtl.conditional_assignment:
             with req_type_i == 1:
                 with writable == 0:
                     error_code_o |= 4
+            with pyrtl.otherwise:
+                error_code_o |= 0
                 
 
                 
