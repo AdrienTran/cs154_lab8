@@ -64,6 +64,8 @@ with pyrtl.conditional_assignment:
         
         with valid == 0:
             page_fault |= 1
+            error_code_o |= 1
+        
         next_addr.next |= pyrtl.corecircuits.concat(first_entry[0:22], offset2)
         # print(temp_addr.bitwidth)
         
@@ -79,35 +81,45 @@ with pyrtl.conditional_assignment:
         valid = second_entry[31]
         with valid == 0:
             page_fault |= 1
+            error_code_o |= 1
+        with req_type_i == 0:
+            with readable == 0:
+                error_code_o |= 2
+        with req_type_i == 1:
+            with writable == 0:
+                error_code_o |= 4
+        
         temp_addr2 = pyrtl.corecircuits.concat(second_entry[0:20], offset3)
         # print(temp_addr.bitwidth)
         # temp_addr = temp_addr | offset3
+        
         physical_addr_o |= temp_addr2
+        finished_walk_o |= 1
         
             
 
 # Step 4 : Determine the outputs based on the last level of the page table walk
-with pyrtl.conditional_assignment:
-    with reset_i == 0:
-        with state == 0:
-            error_code_o |= 0
-        with state == 1:
-            with page_fault == 1:
-                error_code_o |= 1
-            with page_fault == 0:
-                error_code_o |= 0
-        with state == 2:
-            finished_walk_o |= 1
-            with page_fault == 1:
-                error_code_o |= 1
-            with req_type_i == 0:
-                with readable == 0:
-                    error_code_o |= 2
-            with req_type_i == 1:
-                with writable == 0:
-                    error_code_o |= 4
-            with pyrtl.otherwise:
-                error_code_o |= 0
+# with pyrtl.conditional_assignment:
+#     with reset_i == 0:
+#         with state == 0:
+#             error_code_o |= 0
+#         with state == 1:
+#             with page_fault == 1:
+#                 error_code_o |= 1
+#             with page_fault == 0:
+#                 error_code_o |= 0
+#         with state == 2:
+#             finished_walk_o |= 1
+#             with page_fault == 1:
+#                 error_code_o |= 1
+#             with req_type_i == 0:
+#                 with readable == 0:
+#                     error_code_o |= 2
+#             with req_type_i == 1:
+#                 with writable == 0:
+#                     error_code_o |= 4
+#             with pyrtl.otherwise:
+#                 error_code_o |= 0
                 
 
                 
