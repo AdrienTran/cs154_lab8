@@ -13,8 +13,6 @@ valid_o               = pyrtl.Output(bitwidth=1, name="valid_o")
 ref_o                 = pyrtl.Output(bitwidth=1, name="ref_o")
 error_code_o          = pyrtl.Output(bitwidth=3, name="error_code_o")
 finished_walk_o       = pyrtl.Output(bitwidth=1, name="finished_walk_o")
-# readable_o            = pyrtl.Output(bitwidth=1, name="readable_o")
-# writable_o            = pyrtl.Output(bitwidth=1, name="writable_o")
 
 page_fault          = pyrtl.WireVector(bitwidth=1, name="page_fault")
 state               = pyrtl.Register(bitwidth=2, name="state")
@@ -42,6 +40,8 @@ with pyrtl.conditional_assignment:
                 state.next |= 2
         with state == 2:
             state.next |= 0
+    with reset_i == 1:
+        state.next |= 0
 
 # Step 3 : Determine physical address by walking the page table structure
 next_addr = pyrtl.Register(bitwidth=32, name="temp_addr")
@@ -137,27 +137,4 @@ if __name__ == "__main__":
     assert (sim_trace.trace["physical_addr_o"][-1] == 0x61d26db3)
     assert (sim_trace.trace["error_code_o"][-1] == 0x0)
     assert (sim_trace.trace["dirty_o"][-1] == 0x0)
-    # assert (sim_trace.trace["readable_o"][-1] == 0x1)
-    
-    # memory = {
-    #     4293918528: 0x00000000,  # Level 1 entry is invalid (page fault)
-    # }
-
-    # sim_trace = pyrtl.SimulationTrace()
-    # sim = pyrtl.Simulation(tracer=sim_trace, memory_value_map={main_memory: memory})
-
-    # for i in range(3):
-    #     sim.step({
-    #         new_req_i: 1,
-    #         reset_i: 0,
-    #         virtual_addr_i: 0xA1234567,  # Address that causes a page fault
-    #         req_type_i: 0
-    #     })
-
-    # sim_trace.render_trace(symbol_len=20)
-
-    # assert (sim_trace.trace["physical_addr_o"][-1] == 0x0)  # No valid physical address
-    # assert (sim_trace.trace["error_code_o"][-1] == 0x1)  # Page fault error
-    # assert (sim_trace.trace["dirty_o"][-1] == 0x0)  # No dirty bit set
-    # # assert (sim_trace.trace["readable_o"][-1] == 0x0
     
