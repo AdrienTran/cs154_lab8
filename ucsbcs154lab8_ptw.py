@@ -85,10 +85,10 @@ with pyrtl.conditional_assignment:
             error_code_o |= 1
         with req_type_i == 0:
             with readable == 0:
-                error_code_o |= 4
+                error_code_o |= 2
         with req_type_i == 1:
             with writable == 0:
-                error_code_o |= 2
+                error_code_o |= 4
         
         temp_addr2 = pyrtl.corecircuits.concat(second_entry[0:20], offset3)
         
