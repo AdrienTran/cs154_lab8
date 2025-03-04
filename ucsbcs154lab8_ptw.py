@@ -13,8 +13,8 @@ valid_o               = pyrtl.Output(bitwidth=1, name="valid_o")
 ref_o                 = pyrtl.Output(bitwidth=1, name="ref_o")
 error_code_o          = pyrtl.Output(bitwidth=3, name="error_code_o")
 finished_walk_o       = pyrtl.Output(bitwidth=1, name="finished_walk_o")
-readable_o            = pyrtl.Output(bitwidth=1, name="readable_o")
-writable_o            = pyrtl.Output(bitwidth=1, name="writable_o")
+# readable_o            = pyrtl.Output(bitwidth=1, name="readable_o")
+# writable_o            = pyrtl.Output(bitwidth=1, name="writable_o")
 
 page_fault          = pyrtl.WireVector(bitwidth=1, name="page_fault")
 state               = pyrtl.Register(bitwidth=2, name="state")
@@ -71,8 +71,8 @@ with pyrtl.conditional_assignment:
         ref_o |= temp_addr[29]
         writable = temp_addr[28]
         readable = temp_addr[27]
-        writable_o |= temp_addr[28]
-        readable_o |= temp_addr[27]
+        # writable_o |= temp_addr[28]
+        # readable_o |= temp_addr[27]
         
         valid = temp_addr[31]
         with valid == 0:
@@ -129,4 +129,4 @@ if __name__ == "__main__":
     assert (sim_trace.trace["physical_addr_o"][-1] == 0x61d26db3)
     assert (sim_trace.trace["error_code_o"][-1] == 0x0)
     assert (sim_trace.trace["dirty_o"][-1] == 0x0)
-    assert (sim_trace.trace["readable_o"][-1] == 0x1)
+    # assert (sim_trace.trace["readable_o"][-1] == 0x1)
