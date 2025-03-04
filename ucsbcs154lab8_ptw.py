@@ -31,22 +31,17 @@ offset3 |= virtual_addr_i[0:12]
 
 # Step 2 : UPDATE STATE according to state diagram in instructions
 with pyrtl.conditional_assignment:
-    # with reset_i == 1:
-        # dirty_o |= 0
-        # valid_o |= 0
-        # ref_o |= 0
-        # error_code_o |= 0
-        # finished_walk_o |= 0
-    with state == 0:
-        with new_req_i == 1:
-            state.next |= 1
-    with state == 1:
-        with page_fault == 1:
+    with reset_i == 0:
+        with state == 0:
+            with new_req_i == 1:
+                state.next |= 1
+        with state == 1:
+            with page_fault == 1:
+                state.next |= 0
+            with page_fault == 0:
+                state.next |= 2
+        with state == 2:
             state.next |= 0
-        with page_fault == 0:
-            state.next |= 2
-    with state == 2:
-        state.next |= 0
 
 # Step 3 : Determine physical address by walking the page table structure
 next_addr = pyrtl.Register(bitwidth=32, name="temp_addr")
@@ -57,7 +52,12 @@ with pyrtl.conditional_assignment:
         
     with state == 1:
         temp_addr = main_memory[next_addr]
+        
         valid = temp_addr[31]
+        valid_o |= temp_addr[31]
+        dirty_o |= temp_addr[30]
+        ref_o |= temp_addr[29]
+        
         with valid == 0:
             page_fault |= 1
         next_addr.next |= pyrtl.corecircuits.concat(temp_addr[0:22], offset2)
@@ -71,6 +71,7 @@ with pyrtl.conditional_assignment:
         ref_o |= temp_addr[29]
         writable = temp_addr[28]
         readable = temp_addr[27]
+        
         # writable_o |= temp_addr[28]
         # readable_o |= temp_addr[27]
         
@@ -87,6 +88,13 @@ with pyrtl.conditional_assignment:
 # Step 4 : Determine the outputs based on the last level of the page table walk
 with pyrtl.conditional_assignment:
     with reset_i == 0:
+        with state == 0:
+            error_code_o |= 0
+        with state == 1:
+            with page_fault == 1:
+                error_code_o |= 1
+            with page_fault == 0:
+                error_code_o |= 0
         with state == 2:
             finished_walk_o |= 1
             with page_fault == 1:
@@ -130,3 +138,26 @@ if __name__ == "__main__":
     assert (sim_trace.trace["error_code_o"][-1] == 0x0)
     assert (sim_trace.trace["dirty_o"][-1] == 0x0)
     # assert (sim_trace.trace["readable_o"][-1] == 0x1)
+    
+    # memory = {
+    #     4293918528: 0x00000000,  # Level 1 entry is invalid (page fault)
+    # }
+
+    # sim_trace = pyrtl.SimulationTrace()
+    # sim = pyrtl.Simulation(tracer=sim_trace, memory_value_map={main_memory: memory})
+
+    # for i in range(3):
+    #     sim.step({
+    #         new_req_i: 1,
+    #         reset_i: 0,
+    #         virtual_addr_i: 0xA1234567,  # Address that causes a page fault
+    #         req_type_i: 0
+    #     })
+
+    # sim_trace.render_trace(symbol_len=20)
+
+    # assert (sim_trace.trace["physical_addr_o"][-1] == 0x0)  # No valid physical address
+    # assert (sim_trace.trace["error_code_o"][-1] == 0x1)  # Page fault error
+    # assert (sim_trace.trace["dirty_o"][-1] == 0x0)  # No dirty bit set
+    # # assert (sim_trace.trace["readable_o"][-1] == 0x0
+    
