@@ -20,7 +20,6 @@ base_register       = pyrtl.Const(0x3FFBFF, bitwidth=22)
 
 writable = pyrtl.WireVector(bitwidth=1, name="writable")
 readable = pyrtl.WireVector(bitwidth=1, name="readable")
-# error_code = pyrtl.WireVector(bitwidth=3, name="error_code")
 
 # Step 1 : Split input into the three offsets
 offset1 = pyrtl.WireVector(bitwidth=10, name="offset1")
@@ -65,7 +64,6 @@ with pyrtl.conditional_assignment:
         
         with valid == 0:
             page_fault |= 1
-            # error_code_o |= 1
         
         next_addr.next |= pyrtl.corecircuits.concat(first_entry[0:22], offset2)
         
@@ -81,18 +79,10 @@ with pyrtl.conditional_assignment:
         valid = second_entry[31]
         with valid == 0:
             page_fault |= 1
-            # error_code_o |= 1
-        # with req_type_i == 0:
-        #     with readable == 0:
-        #         error_code_o |= 4
-        # with req_type_i == 1:
-        #     with writable == 0:
-        #         error_code_o |= 2
         
         temp_addr2 = pyrtl.corecircuits.concat(second_entry[0:20], offset3)
         
         physical_addr_o |= temp_addr2
-        # finished_walk_o |= 1
         
             
 
